@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VigilSense - Smart Field Patrolling & Hazard Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        #cameraStream {
+            max-height: 100%;
+            max-width: 100%;
+        }
+        .chart-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-black text-white h-screen flex flex-col">
+    <!-- Header Bar -->
+    <div class="border-b border-gray-600 px-6 py-3 flex items-center justify-between">
+        <div>
+            <h1 class="text-xl font-bold text-white">VIGILSENSE DASHBOARD</h1>
+            <p class="text-xs text-gray-400 mt-0.5">Smart Field Patrolling & Hazard Detection</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div id="statusBanner" class="px-4 py-2 border border-gray-600 rounded">
+                <span id="statusText" class="text-sm font-medium text-white">✅ All Systems Normal</span>
+            </div>
+                <button id="telegramToggle" class="px-4 py-2 border border-gray-600 rounded text-sm font-medium text-white hover:bg-gray-900 transition-colors" title="Toggle Telegram Alerts">
+                    TELEGRAM: <span id="telegramState">--</span>
+                </button>
+            <button onclick="toggleFullscreen()" class="px-4 py-2 border border-gray-600 rounded text-sm font-medium text-white hover:bg-gray-900 transition-colors" title="Toggle Fullscreen">
+                <svg id="fullscreenIcon" class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                </svg>
+                <span id="fullscreenText" class="ml-1">FULLSCREEN</span>
+            </button>
+            <a href="/logs" class="px-4 py-2 border border-gray-600 rounded text-sm font-medium text-white hover:bg-gray-900 transition-colors">
+                VIEW LOGS
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content - Fits in viewport -->
+    <div class="flex-1 overflow-hidden p-4">
+        <div class="grid grid-cols-12 gap-4 h-full">
+            <!-- Left Side: Large Camera Feed (8 columns) -->
+            <div class="col-span-12 lg:col-span-8 flex flex-col">
+                <div class="border border-gray-600 rounded p-3 flex-1 flex flex-col bg-black">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                            <h2 class="text-sm font-bold text-white">LIVE FEED</h2>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-black rounded border border-gray-600 overflow-hidden flex items-center justify-center">
+                        <img id="cameraStream" src="/stream.mjpg" 
+                             alt="Live Camera Feed" 
+                             class="w-full h-full object-contain"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 640 480\'%3E%3Crect fill=\'%23000\' width=\'640\' height=\'480\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' fill=\'%23fff\' text-anchor=\'middle\' font-size=\'24\'%3EStream Loading...%3C/text%3E%3C/svg%3E'">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Sensor Cards + Charts (4 columns) -->
+            <div class="col-span-12 lg:col-span-4 flex flex-col gap-4 h-full">
+                <!-- Sensor Cards Grid -->
+                <div class="border border-gray-600 rounded p-3 bg-black">
+                    <h2 class="text-sm font-bold text-white mb-3">SENSOR DATA</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Temperature Card -->
+                        <div id="tempCard" class="border border-gray-600 rounded p-3 bg-black">
+                            <div class="text-xs text-gray-400 mb-1">TEMPERATURE</div>
+                            <div class="text-2xl font-bold text-white" id="temperature">--</div>
+                            <div class="text-xs text-gray-500">°C</div>
+                        </div>
+
+                        <!-- Humidity Card -->
+                        <div id="humidityCard" class="border border-gray-600 rounded p-3 bg-black">
+                            <div class="text-xs text-gray-400 mb-1">HUMIDITY</div>
+                            <div class="text-2xl font-bold text-white" id="humidity">--</div>
+                            <div class="text-xs text-gray-500">%</div>
+                        </div>
+
+                        <!-- Gas Card -->
+                        <div id="gasCard" class="border border-gray-600 rounded p-3 bg-black">
+                            <div class="text-xs text-gray-400 mb-1">GAS LEVEL</div>
+                            <div class="text-2xl font-bold text-white" id="gas">--</div>
+                            <div class="text-xs text-gray-500">ppm</div>
+                        </div>
+
+                        <!-- Flame Card -->
+                        <div id="flameCard" class="border border-gray-600 rounded p-3 bg-black">
+                            <div class="text-xs text-gray-400 mb-1">FLAME</div>
+                            <div class="text-2xl font-bold text-white" id="flame">--</div>
+                            <div class="text-xs text-gray-500" id="flameStatus">Status</div>
+                        </div>
+
+                        <!-- Sound Card -->
+                        <div id="soundCard" class="border border-gray-600 rounded p-3 bg-black">
+                            <div class="text-xs text-gray-400 mb-1">SOUND</div>
+                            <div class="text-2xl font-bold text-white" id="sound">--</div>
+                            <div class="text-xs text-gray-500">dB</div>
+                        </div>
+
+                        <!-- Vibration Card -->
+                        <div id="vibrationCard" class="border border-gray-600 rounded p-3 bg-black">
+                            <div class="text-xs text-gray-400 mb-1">VIBRATION</div>
+                            <div class="text-2xl font-bold text-white" id="vibration">--</div>
+                            <div class="text-xs text-gray-500">Level</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="border border-gray-600 rounded p-3 bg-black flex-1 flex flex-col" style="min-height: 200px;">
+                    <h2 class="text-sm font-bold text-white mb-3">SENSOR TRENDS</h2>
+                    <div class="flex-1" style="min-height: 0;">
+                        <canvas id="sensorChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
