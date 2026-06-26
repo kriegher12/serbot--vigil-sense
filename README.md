@@ -158,6 +158,9 @@ This modular architecture improves maintainability and scalability.
 ![Detection Logs](screenshots/dashboard_logs.png)
 *Detailed detection log table with timestamp and sensor readings*
 
+![Working Setup](screenshots/working.jpg)
+*Live showcase of the dashboard feed at the Serbot Tech Expo*
+
 ---
 
 ## System Architecture
