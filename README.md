@@ -274,15 +274,29 @@ The platform was designed to optimize:
 
 ## Repository Structure
 
-(keep your existing structure section)
-
----
-
-## Documentation
-
-(keep your existing documentation section)
-
----
+```
+vigil_sense_dashboard/
+├── app.py                          # Flask backend with YOLO
+├── requirements.txt                 # Python dependencies
+├── templates/
+│   ├── index.html                  # Main dashboard
+│   └── logs.html                   # Detection logs page
+├── static/
+│   ├── css/
+│   │   └── style.css              # Custom styles
+│   └── js/
+│       └── dashboard.js           # Frontend logic
+├── arduino_code.ino                # Sensor data collection
+├── arduino_motor_control_ble.ino  # Bluetooth motor control
+├── arduino_motor_control.ino      # WiFi motor control
+├── deploy_to_pi.sh                 # Deployment script
+├── upload_motor_control*.sh       # Motor control upload scripts
+└── docs/
+    ├── HARDWARE_SETUP.md
+    ├── ARDUINO_SETUP.md
+    ├── MOTOR_CONTROL_SETUP.md
+    └── ...
+```
 
 ## Author
 
